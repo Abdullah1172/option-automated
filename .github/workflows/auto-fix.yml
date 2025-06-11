@@ -23,7 +23,17 @@ jobs:
           sed -i 's/"organization-id": ""/"organization-id": "c9d123ffc99a793105570496669ef511"/g' lean.json
           sed -i 's/"job-organization-id": ""/"job-organization-id": "c9d123ffc99a793105570496669ef511"/g' lean.json
           cat lean.json | grep organization-id
-      - name: Push Project
-        run: lean cloud push --project "IronCondorTest"
+      - name: Debug and Push Project
+        run: |
+          echo "📂 Checking current directory contents..."
+          ls -la
+          echo "📂 Checking if IronCondorTest directory exists..."
+          ls -la IronCondorTest/ || echo "IronCondorTest directory not found"
+          echo "📦 Pushing project to cloud..."
+          lean cloud push --project "IronCondorTest" || {
+            echo "❌ Push failed, let's check what's available..."
+            lean project list 2>/dev/null || echo "No projects found"
+            exit 1
+          }
       - name: Backtest
         run: lean cloud backtest "IronCondorTest" --open

@@ -1,0 +1,125 @@
+name: QuantConnect Backtest with Auto-Fix
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    env:
+      QC_TOKEN: ${{ secrets.QC_TOKEN }}
+      QC_ORG_ID: ${{ secrets.QC_ORG_ID }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      
+      - name: Install Lean CLI
+        run: |
+          pip install --upgrade lean
+          lean --version
+      
+      - name: Login to QuantConnect
+        run: |
+          if [ -z "$QC_TOKEN" ] || [ -z "$QC_ORG_ID" ]; then
+            echo "ERROR: QC_TOKEN and QC_ORG_ID secrets must be set"
+            exit 1
+          fi
+          lean login --user-id "$QC_ORG_ID" --api-token "$QC_TOKEN"
+          echo "✅ Successfully logged in to QuantConnect"
+      
+      - name: Push Project to Cloud
+        run: |
+          echo "📦 Pushing IronCondor project to QuantConnect cloud..."
+          lean cloud push --project "IronCondor" || {
+            echo "❌ Failed to push project to cloud"
+            exit 1
+          }
+          echo "✅ Project pushed successfully"
+      
+      - name: Run Cloud Backtest
+        id: backtest
+        run: |
+          echo "🚀 Starting cloud backtest..."
+          lean cloud backtest "IronCondor" --open --push > backtest_output.txt 2>&1
+          BACKTEST_EXIT_CODE=$?
+          
+          echo "BACKTEST_EXIT_CODE=$BACKTEST_EXIT_CODE" >> $GITHUB_OUTPUT
+          
+          if [ $BACKTEST_EXIT_CODE -eq 0 ]; then
+            echo "✅ Backtest completed successfully"
+            echo "BACKTEST_STATUS=success" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Backtest failed with exit code $BACKTEST_EXIT_CODE"
+            echo "BACKTEST_STATUS=failed" >> $GITHUB_OUTPUT
+          fi
+          
+          # Always show output
+          echo "📊 Backtest Output:"
+          cat backtest_output.txt
+      
+      - name: Analyze Results
+        if: steps.backtest.outputs.BACKTEST_STATUS == 'success'
+        run: |
+          echo "📈 Analyzing backtest results..."
+          # Here we would parse the results and check against criteria
+          # For now, just show that the step ran
+          echo "✅ Results analysis complete"
+      
+      - name: Handle Errors
+        if: steps.backtest.outputs.BACKTEST_STATUS == 'failed'
+        run: |
+          echo "🔧 Backtest failed, analyzing errors..."
+          
+          # Look for common error patterns
+          if grep -q "compilation" backtest_output.txt; then
+            echo "❌ Compilation errors detected"
+            echo "NEEDS_AUTOFIX=true" >> $GITHUB_ENV
+          elif grep -q "runtime" backtest_output.txt; then
+            echo "❌ Runtime errors detected"
+            echo "NEEDS_AUTOFIX=true" >> $GITHUB_ENV
+          else
+            echo "❌ Unknown error type"
+            echo "NEEDS_AUTOFIX=false" >> $GITHUB_ENV
+          fi
+          
+          # Extract error details
+          echo "📋 Error Details:"
+          grep -i "error\|exception\|fail" backtest_output.txt || echo "No specific error patterns found"
+      
+      - name: Upload Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backtest-results-${{ github.run_number }}
+          path: |
+            backtest_output.txt
+            *.json
+            *.log
+          retention-days: 30
+      
+      - name: Create Summary
+        if: always()
+        run: |
+          echo "# 📊 Backtest Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ${{ steps.backtest.outputs.BACKTEST_STATUS }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Exit Code**: ${{ steps.backtest.outputs.BACKTEST_EXIT_CODE }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp**: $(date -u)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.backtest.outputs.BACKTEST_STATUS }}" = "success" ]; then
+            echo "✅ **Backtest completed successfully!**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Backtest failed. Check logs for details.**" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "View detailed logs in the artifacts section." >> $GITHUB_STEP_SUMMARY

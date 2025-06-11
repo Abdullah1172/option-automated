@@ -1,0 +1,35 @@
+name: Auto Fix Loop
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    env:
+      QC_TOKEN: ${{ secrets.QC_TOKEN }}
+      QC_USER_ID: ${{ secrets.QC_USER_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Lean CLI & Docker
+        run: |
+          pip install --upgrade lean
+          sudo apt-get update && sudo apt-get install -y docker.io
+      - name: Lean Login
+        run: lean login -u "$QC_USER_ID" -t "$QC_TOKEN" --show-secrets
+      - name: Compile
+        run: lean cloud build "IronCondor" --output build.json
+      - name: Backtest
+        run: lean cloud backtest "IronCondor" -o result.json
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: backtest-results
+          path: |
+            build.json
+            result.json

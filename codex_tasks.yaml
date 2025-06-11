@@ -1,0 +1,23 @@
+version: 1
+mcp:
+  endpoint: http://localhost:8000  # adjust if MCP server runs elsewhere
+  auth: none
+
+tasks:
+  backtest_iron_condor:
+    project: IronCondor
+    language: python
+    compile:
+      cmd: "lean cloud build \"IronCondor\" --output build.json"
+      ok_when: "build.json.status == 'Success'"
+    backtest:
+      cmd: "lean cloud backtest \"IronCondor\" -o result.json"
+      metrics:
+        win_rate: ">= 0.55"
+        avg_r: ">= 0.15"
+        trades: "> 0"
+      runtime_errors_path: "result.json.runtimeErrors"
+    done_when:
+      compile_ok: true
+      win_rate: ">= 0.55"
+      avg_r: ">= 0.15"

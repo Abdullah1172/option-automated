@@ -1,0 +1,12 @@
+{
+  "data-folder": "~/.quantconnect/data/",
+  "organizationId": 386972,
+  "engine-version": "latest",
+  "projects": [
+    {
+      "path": "IronCondor",
+      "language": "python",
+      "parameters": {}
+    }
+  ]
+}

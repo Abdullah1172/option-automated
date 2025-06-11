@@ -52,9 +52,10 @@ jobs:
       
       - name: Run Cloud Backtest
         id: backtest
+        timeout-minutes: 60
         run: |
-          echo "🚀 Starting cloud backtest..."
-          lean cloud backtest "IronCondorTest" --verbose > backtest_output.txt 2>&1
+          echo "🚀 Starting cloud backtest with 1-hour timeout..."
+          lean cloud backtest "IronCondorTest" --open --verbose > backtest_output.txt 2>&1
           BACKTEST_EXIT_CODE=$?
           
           echo "BACKTEST_EXIT_CODE=$BACKTEST_EXIT_CODE" >> $GITHUB_OUTPUT

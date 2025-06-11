@@ -41,9 +41,10 @@ jobs:
             exit 1
           }
       - name: Backtest
+        timeout-minutes: 60
         run: |
-          echo "🚀 Starting cloud backtest without waiting for completion..."
-          lean cloud backtest "IronCondorTest" --verbose || {
+          echo "🚀 Starting cloud backtest with 1-hour timeout..."
+          lean cloud backtest "IronCondorTest" --open --verbose || {
             echo "❌ Backtest failed, checking available nodes..."
             echo "This might be due to no available compute nodes"
             exit 0

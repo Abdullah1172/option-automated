@@ -42,7 +42,9 @@ jobs:
       - name: Push Project to Cloud
         run: |
           echo "📦 Pushing IronCondorTest project to QuantConnect cloud..."
-          lean cloud push --project "IronCondorTest" || {
+          echo "🔑 Checking login status..."
+          lean whoami
+          lean cloud push --project "IronCondorTest" --verbose || {
             echo "❌ Failed to push project to cloud"
             exit 1
           }
@@ -52,7 +54,7 @@ jobs:
         id: backtest
         run: |
           echo "🚀 Starting cloud backtest..."
-          lean cloud backtest "IronCondorTest" --open > backtest_output.txt 2>&1
+          lean cloud backtest "IronCondorTest" --verbose > backtest_output.txt 2>&1
           BACKTEST_EXIT_CODE=$?
           
           echo "BACKTEST_EXIT_CODE=$BACKTEST_EXIT_CODE" >> $GITHUB_OUTPUT

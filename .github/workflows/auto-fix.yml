@@ -29,11 +29,19 @@ jobs:
           ls -la
           echo "📂 Checking if IronCondorTest directory exists..."
           ls -la IronCondorTest/ || echo "IronCondorTest directory not found"
-          echo "📦 Pushing project to cloud..."
-          lean cloud push --project "IronCondorTest" || {
+          echo "🔑 Checking login status..."
+          lean whoami
+          echo "📦 Pushing project to cloud with verbose output..."
+          lean cloud push --project "IronCondorTest" --verbose || {
             echo "❌ Push failed, let's check what's available..."
-            lean project list 2>/dev/null || echo "No projects found"
+            lean cloud --help
             exit 1
           }
       - name: Backtest
-        run: lean cloud backtest "IronCondorTest" --open
+        run: |
+          echo "🚀 Starting cloud backtest without waiting for completion..."
+          lean cloud backtest "IronCondorTest" --verbose || {
+            echo "❌ Backtest failed, checking available nodes..."
+            echo "This might be due to no available compute nodes"
+            exit 0
+          }

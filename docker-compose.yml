@@ -1,0 +1,13 @@
+version: "3.9"
+services:
+  mcp-trader:
+    image: ghcr.io/inductive-bias/mcp-trader:latest
+    container_name: mcp-trader
+    environment:
+      - QC_USER_ID=${QC_USER_ID}
+      - QC_TOKEN=${QC_TOKEN}
+    volumes:
+      - ./:/workspace
+    ports:
+      - "8000:8000"
+    command: ["mcp-trader", "--lean-project", "/workspace/IronCondor"]

@@ -1,0 +1,56 @@
+name: Debug Backtest
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    env:
+      QC_TOKEN: ${{ secrets.QC_TOKEN }}
+      QC_ORG_ID: ${{ secrets.QC_ORG_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          
+      - name: Install Lean CLI
+        run: pip install --upgrade lean
+        
+      - name: Login to QuantConnect
+        run: |
+          lean login --user-id "386972" --api-token "$QC_TOKEN"
+          lean whoami
+          
+      - name: Update Lean Config
+        run: |
+          sed -i "s/\"organization-id\": \"\"/\"organization-id\": \"$QC_ORG_ID\"/g" lean.json
+          sed -i "s/\"job-organization-id\": \"\"/\"job-organization-id\": \"$QC_ORG_ID\"/g" lean.json
+          
+      - name: Push Project
+        run: |
+          lean cloud push --project "IronCondorTest" --verbose
+          
+      - name: Debug Backtest Command
+        run: |
+          echo "Testing backtest command with detailed error reporting..."
+          set -e  # Exit on any error
+          
+          # Try without --open first
+          echo "Attempting backtest without --open flag..."
+          lean cloud backtest "IronCondorTest" --verbose 2>&1 | tee backtest_debug.log || {
+            echo "❌ Backtest command failed"
+            echo "Error details:"
+            cat backtest_debug.log
+            exit 1
+          }
+          
+      - name: Upload Debug Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-logs
+          path: backtest_debug.log

@@ -157,7 +157,7 @@ class IronCondorTest(QCAlgorithm):
             "short_put": short_put.symbol,
             "short_call": short_call.symbol,
             "wing_call": wing_call.symbol,
-            "orders": [order1.id, order2.id, order3.id, order4.id]
+            "orders": [order1.order_id, order2.order_id, order3.order_id, order4.order_id]
         }
         self.log(f"OPEN  condor {condor_id}: credit {credit:.2f} ×{qty}  IVR={iv_rank:.2f}")
 

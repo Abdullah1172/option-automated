@@ -29,14 +29,14 @@ jobs:
       - name: Login to QuantConnect
         run: |
           echo "🔑 Logging in to QuantConnect..."
-          lean login --user-id "386972" --api-token "f6f5df71e9938e3c4eca2298528bcc383c2a5fad14283313ecb9d07c68463e78" --organization-id "c9d123ffc99a793105570496669ef511"
+          lean login --token "$QC_TOKEN" --organization-id "$QC_ORG_ID"
           echo "✅ Successfully logged in to QuantConnect"
       
       - name: Update Lean Config
         run: |
           echo "📝 Updating lean.json with organization ID..."
-          sed -i 's/"organization-id": ""/"organization-id": "c9d123ffc99a793105570496669ef511"/g' lean.json
-          sed -i 's/"job-organization-id": ""/"job-organization-id": "c9d123ffc99a793105570496669ef511"/g' lean.json
+          sed -i "s/\"organization-id\": \"\"/\"organization-id\": \"$QC_ORG_ID\"/g" lean.json
+          sed -i "s/\"job-organization-id\": \"\"/\"job-organization-id\": \"$QC_ORG_ID\"/g" lean.json
           echo "✅ Configuration updated"
       
       - name: Push Project to Cloud

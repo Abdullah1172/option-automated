@@ -29,7 +29,7 @@ jobs:
       - name: Login to QuantConnect
         run: |
           echo "🔑 Logging in to QuantConnect..."
-          lean login --token "$QC_TOKEN" --organization-id "$QC_ORG_ID"
+          lean login --user-id "386972" --api-token "$QC_TOKEN"
           echo "✅ Successfully logged in to QuantConnect"
       
       - name: Update Lean Config

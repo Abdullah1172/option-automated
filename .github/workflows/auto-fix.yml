@@ -19,7 +19,7 @@ jobs:
       - name: Install Lean CLI
         run: pip install --upgrade lean
       - name: Lean Login 
-        run: lean login --token "$QC_TOKEN" --organization-id "$QC_ORG_ID"
+        run: lean login --user-id "386972" --api-token "$QC_TOKEN"
       - name: Update Lean Config
         run: |
           echo "Updating lean.json with organization ID..."

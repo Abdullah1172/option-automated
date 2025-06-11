@@ -9,27 +9,24 @@ jobs:
     runs-on: ubuntu-latest
     env:
       QC_TOKEN: ${{ secrets.QC_TOKEN }}
-      QC_USER_ID: ${{ secrets.QC_USER_ID }}
+      QC_ORG_ID: ${{ secrets.QC_ORG_ID }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install Lean CLI & Docker
+      - name: Install Lean CLI
+        run: pip install --upgrade lean
+      - name: Lean Login 
+        run: lean login -t "$QC_TOKEN" --show-secrets
+      - name: Update Lean Config
         run: |
-          pip install --upgrade lean
-          sudo apt-get update && sudo apt-get install -y docker.io
-      - name: Lean Login
-        run: lean login -u "$QC_USER_ID" -t "$QC_TOKEN" --show-secrets
-      - name: Compile
-        run: lean cloud build "IronCondor" --output build.json
+          echo "Updating lean.json with organization ID..."
+          sed -i 's/"organization-id": ""/"organization-id": "c9d123ffc99a793105570496669ef511"/g' lean.json
+          sed -i 's/"job-organization-id": ""/"job-organization-id": "c9d123ffc99a793105570496669ef511"/g' lean.json
+          cat lean.json | grep organization-id
+      - name: Push Project
+        run: lean cloud push --project "IronCondorTest"
       - name: Backtest
-        run: lean cloud backtest "IronCondor" -o result.json
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: backtest-results
-          path: |
-            build.json
-            result.json
+        run: lean cloud backtest "IronCondorTest" --open
